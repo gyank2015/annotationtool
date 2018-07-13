@@ -1,0 +1,47 @@
+{% extends 'upload_service/base.html' %}
+{% block upload_active %}active{% endblock %}
+
+{% block body %}
+
+<!DOCTYPE html>
+<html>
+<body>
+{% if dataset_type != 2 %}
+<p> Check labels for which you want to get result ! </p>
+<form action="" method="post" onsubmit="return validate_form();">
+  {% csrf_token %}
+  <input type="hidden" name="dataset_ID" value="{{dataset_ID}}">
+  {% for label in labels %}
+    <input type="checkbox" name="labels" value="{{label.label_ID}}"> {{label.name}}<br>
+{% endfor %}
+    <input type="submit" value="Download Dataset">
+</form>
+{% else %}
+
+<form action="" method="post">
+  {% csrf_token %}
+  <input type="hidden" name="dataset_ID" value="{{dataset_ID}}">
+  <input type="submit" value="Download Dataset">
+</form>
+
+{% endif %}
+</body>
+</html>
+<script type="text/javascript">
+	
+	function validate_form()
+{
+valid = true;
+
+if($('input[type=checkbox]:checked').length == 0)
+{
+    alert ( "ERROR! Please select at least one checkbox" );
+    valid = false;
+}
+
+return valid;
+}
+</script>
+
+
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends 'upload_service/base.html' %}
+{% block upload_active %}active{% endblock %}
+
+{% block body %}
+
+<!DOCTYPE html>
+<html>
+<body>
+<h1> To get result click on link below </h1>
+{% for dataset in datasets %}
+<!-- <button id={{dataset.dataset_ID}}>{{dataset.name}}</button></br> -->
+<a href="{{ dataset.dataset_ID }}">{{ dataset.source }} | {{ dataset.name }}</a> </br>
+{% endfor %}
+</body>
+</html>
+
+
+{% endblock %}
