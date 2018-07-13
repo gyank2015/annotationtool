@@ -1,0 +1,96 @@
+{% extends 'upload_service/base.html' %}
+{% block upload_active %}active{% endblock %}
+
+{% block body %}
+
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1> Add more labels to dataset : {{dataset_ID}}| {{dataset_name}} </h1>
+
+<form id="myform" action="" method="post">
+{% csrf_token %}
+<input type="hidden" id="labelField" name="labels" value="xxxxxxxx" />
+<input type="hidden"  name="dataset_ID" value={{dataset_ID}}/>
+<input type="hidden"  name="dataset_type" value={{dataset_type}}/>
+<input type="hidden"  name="dataset_name" value={{dataset_name}}/>
+
+</form>
+
+
+<head>
+    <title>Add Labels</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
+</head>
+
+<body>
+    <p>Click Add label button to add labels</p>
+    <div id="main">
+        <input type="button" id="btAdd" value="Add labels" class="bt" /><br />
+
+    </div>
+</body>
+
+<script>
+    $(document).ready(function() {
+
+        var iCnt = 0;
+        // CREATE A "DIV" ELEMENT AND DESIGN IT USING jQuery ".css()" CLASS.
+        var container = $(document.createElement('div')).css({
+            padding: '5px', margin: '20px', width: '300px', border: '1px dashed',
+            borderTopColor: '#999', borderBottomColor: '#999',
+            borderLeftColor: '#999', borderRightColor: '#999'
+        });
+
+        $('#btAdd').click(function() {
+
+
+                iCnt = iCnt + 1;
+
+                // ADD TEXTBOX.
+                $(container).append('<div id ="labeldiv"><input type=text class="input" id=tb' + iCnt + ' ' +
+                    'placeholder="Insert label here' + '" /><a href="#" class="remove_field">Remove</a></div>');
+                // SHOW SUBMIT BUTTON IF ATLEAST "1" ELEMENT HAS BEEN CREATED.
+                if (iCnt == 1) {
+                    var divSubmit = $(document.createElement('div'));
+                    $(divSubmit).append('<input type=button class="bt"' +
+                        'onclick="submitForm()"' +
+                            'id=btSubmit value=Submit />');
+                }
+
+                // ADD BOTH THE DIV ELEMENTS TO THE "main" CONTAINER.
+                $('#main').after(container, divSubmit);
+            
+        });
+
+        $(container).on("click",".remove_field", function(e){
+        e.preventDefault();
+        $(this).parent('div').remove();
+        iCnt--;
+        if (iCnt == 0) { 
+                $('#btSubmit').remove(); 
+            }
+    })
+
+    });
+
+    // PICK THE VALUES FROM EACH TEXTBOX WHEN "SUBMIT" BUTTON IS CLICKED.
+    var divValue, values = '';
+
+    function submitForm() {
+        var labels = []
+        $('.input').each(function(i, obj) {
+            labels.push($(obj).val())
+    });
+        document.getElementById("labelField").value = labels
+       $("#myform").submit();
+    }
+</script>
+
+</body>
+</html>
+
+
+{% endblock %}

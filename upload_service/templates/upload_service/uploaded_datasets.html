@@ -1,0 +1,32 @@
+{% extends 'upload_service/base.html' %}
+{% block upload_active %}active{% endblock %}
+
+{% block body %}
+
+<!DOCTYPE html>
+<html>
+<body>
+
+
+<h1> Here are the lists of datasets uploaded by you : </h1>
+
+{% for dataset in datasets %}
+
+<p> Dataset_ID: {{dataset.dataset_ID}} | {{dataset.name}} </p>
+<a href="{{dataset.dataset_ID}}/viewlabels">
+<button>View Labels</button>
+</a> 
+<a href="{{dataset.dataset_ID}}/addlabels">
+    <button>Add Labels</button>
+</a>
+<a href="{{dataset.dataset_ID}}/addimages">
+    <button>Add Images</button>
+</a>
+</br>
+</br>
+
+
+{% endfor %}
+</body>
+</html>
+{% endblock %}

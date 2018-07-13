@@ -1,0 +1,17 @@
+{% extends 'upload_service/base.html' %}
+{% block upload_active %}active{% endblock %}
+
+{% block body %}
+
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1> Labels associated with dataset are </h1>
+{% for label in labels %}
+<p> Label name : {{label.name}} </p> </br> 
+
+{% endfor %}
+</body>
+</html>
+{% endblock %}

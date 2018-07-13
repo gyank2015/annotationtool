@@ -1,0 +1,102 @@
+{% extends 'upload_service/base.html' %}
+{% block upload_active %}active{% endblock %}
+
+{% block body %}
+
+<!DOCTYPE html>
+<html>
+<head>
+        <meta charset="utf-8">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+        <title>Add images</title>
+</head>
+<body>
+		<form id="myAwesomeForm" method="post" action="">
+        {% csrf_token %}
+            <input type="file" id="file" name="images" accept=".zip" multiple ><span class="error"><p id="file_error"></p></span>
+            <input type="submit" id="submitButton" name="submitButton" />
+            <input type="hidden"  name="dataset_ID" value={{dataset_ID}}/>
+        </form>
+        <div id="progress-wrp">
+        <div class="progress-bar" style="height: 5%;"></div>
+        <div class="status">0%</div>
+        </div>
+        <script>
+          $.noConflict();
+            $("#myAwesomeForm").submit(function(e){
+                e.preventDefault();
+                appendFileAndSubmit();
+            });
+
+            function appendFileAndSubmit(){
+                var form = document.getElementById("myAwesomeForm");
+                if( document.getElementById("file").files.length == 0 ){
+                    file_error = "Please select a file";
+                    document.getElementById("file_error").innerHTML = file_error;
+                    return false;
+                    }   
+
+
+                var fd = new FormData(form);
+                $("#loading").dialog({
+                    hide: 'slide',
+	                   show: 'slide',
+	                    autoOpen: false
+                    });
+
+                $.ajax({
+                    url:"/upload/uploaded/addimages",
+                    data: fd,
+                    type:"POST",
+                    // beforeSend: function(){
+                    //   $("#loading").dialog('open').html("<p>Please wait your dataset is being uploaded! </p></br><p> Don't close the browser </p></br><p> Don't refresh the page </p>");
+                    // },
+                    xhr: function () {
+                    var myXhr = $.ajaxSettings.xhr();
+                    if (myXhr.upload) {
+                        myXhr.upload.addEventListener('progress', progressHandling, false);
+                        }
+                    return myXhr;
+                    },
+                    contentType:false,
+                    processData:false,
+                    cache:false,
+                    dataType:"json",
+                    error: function (jqXHR, exception) {
+                        console.log(jqXHR);
+                    },
+                    success:function(data){
+                      $("#loading").dialog('close');
+                        alert('Your images have been uploaded');
+                        window.location.reload(true);
+                    },
+                    complete:function(){
+                        $("#loading").dialog('close');
+                        // return false;
+                        alert('Your images have been uploaded');
+                        window.location.replace("/upload")
+                    }
+                });
+            }
+            function progressHandling (event) {
+                var percent = 0;
+                var position = event.loaded || event.position;
+                var total = event.total;
+                var progress_bar_id = "#progress-wrp";
+                if (event.lengthComputable) {
+                    percent = Math.ceil(position / total * 100);
+                }
+                if(percent==100){
+                  $("#loading").dialog('open').html("<p>Please wait your dataset is being processed! </p></br><p> Don't close the browser </p></br><p> Don't refresh the page </p>");
+                }
+                // update progressbars classes so it fits your code
+                $(progress_bar_id + " .progress-bar").css("width", +percent + "%");
+                $(progress_bar_id + " .status").text(percent + "%");
+            };
+        </script>
+    </body>
+</html>
+
+
+{% endblock %}
