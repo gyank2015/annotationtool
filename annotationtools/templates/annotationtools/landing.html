@@ -1,0 +1,18 @@
+{% extends 'annotationtools/base.html' %}
+{% block body %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Annotations</title>
+</head>
+<body>
+	<div class="list-group" style="width: 70%; text-align: center; align-self: center;">
+    {% for item in annotation_types %}
+    	<a href='{{ item.link }}/'  class="list-group-item list-group-item-info" style="height: 30px; padding: 5px 15px;">{{ item.choice }}</a>
+    {% endfor %}
+    </div>
+</body>
+</html>
+
+{% endblock %}

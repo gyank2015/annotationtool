@@ -1,0 +1,32 @@
+{% extends 'annotationtools/base.html' %}
+
+{% block body %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+</head>
+<body>
+    <form method="POST">
+        {% csrf_token %}
+        <p>
+            <label>Username</label>
+            <input type="text" name="username">
+        </p>
+        <p>
+            <label>Password</label>
+            <input type="password" name="password">
+        </p>
+        <button type="submit">Login</button>
+    </form>
+</body>
+
+<body>
+    <head>
+        No Account? Register <a href="/register">here</a>
+    </head>
+</body>
+</html>
+
+{% endblock %}

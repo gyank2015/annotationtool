@@ -1,0 +1,49 @@
+<head>
+{% load staticfiles %}
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="{% static 'annotationtools/style.css' %}">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+</head>
+
+
+<nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#topNavBar">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/landing"><span class="glyphicon glyphicon-home" aria-hidden="true"></span>&nbsp;Home</a>
+        </div>
+
+        <!-- Items -->
+        <div class="collapse navbar-collapse" id="topNavBar">
+            <ul class="nav navbar-nav">
+                <li class="{% block imagetype_active %}{% endblock %}">
+                <a href="/imageannotation"><span class="glyphicon glyphicon-picture" aria-hidden="true"></span>&nbsp;Imageannotation</a></li>
+                <li class="{% block videotype_active %}{% endblock %}"><a href="/videoannotation"><span class="glyphicon glyphicon-facetime-video" aria-hidden="true"></span>&nbsp; Videoannotation</a></li>
+                <li class="{% block objecttype_active %}{% endblock %}">
+                <a href=""><span class="glyphicon glyphicon-modal-window" aria-hidden="true"></span>&nbsp;Objectannotation</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a href="">
+                        <span class="glyphicon glyphicon-upload" aria-hidden="true"></span>&nbsp; Upload Dataset
+                    </a>
+                </li>
+                <li>
+                    <a href="/logout">
+                        <span class="glyphicon glyphicon-off" aria-hidden="true"></span>&nbsp; Logout ({{user.username}})
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+    </div>
+</nav>
+
+{% block body %}
+{% endblock %}

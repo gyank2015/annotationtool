@@ -1,0 +1,23 @@
+{% extends 'annotationtools/base.html' %}
+{% block body %}
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+</head>
+<body>
+    <form method="POST">
+        {% csrf_token %} {{ form.as_p }}
+        <button type="submit">Submit</button>
+    </form>
+    <br>
+    <div>
+    	Have an account?
+    	<a href='/login'>login</a>
+    </div>
+</body>
+</html>
+
+{% endblock %}
