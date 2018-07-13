@@ -1,0 +1,430 @@
+Transforms (2d)
+***************
+
+Transforms described in this document are meant to be applied on 2d
+images. Each transform can accept an image or a dict of images. Dict
+of images is especially useful when you are doing segmentation.
+
+Let's see an example
+
+   from skimage import io
+   from torchvision.transforms import Compose
+   from image_transforms import transforms as tsfms
+
+   img = io.imread('cut.jpg')
+   transform = Compose([tsfms.RandomRotate(30),
+                        tsfms.RandomCrop(400)])
+
+   # option1: Pass img directly
+   data1 = img
+   out1 = transform(data2)
+   assert out1.shape == (400, 400, 3)
+
+   # option2: pass a dict of images
+   data2 = {'input': img,
+            'target': np.random.randint(0, 4, size=img.shape[:2]),
+            'label': [}
+   out2 = transform(data2)
+   assert out2['input'].shape == (400, 400, 3)
+   assert (out2['target'].max() == 3) and (out2['label'] == 30)
+
+Following is assumed when you pass a dict:
+
+   1. All ndarrays in the dict are considered as images and should
+      be of the same size.
+
+   2. dict can have values which are not arrays, like "label" in
+      the above example
+
+   3. If key for a image in dict has string "target" in it
+      somewhere, it is considered as a target segmentation map. For
+      example in rotation, nearest neighbor interpolation is applied
+      to target.
+
+
+Available transforms
+^^^^^^^^^^^^^^^^^^^^
+
+* Structural transforms
+
+  * Rescale
+
+  * Resize
+
+  * CenterCrop
+
+  * RandomCrop
+
+  * RandomScale
+
+  * RandomSizedCrop
+
+  * RandomRotate
+
+  * RandomHorizontalFlip
+
+  * RandomVerticalFlip
+
+  * Padding
+
+  * ElasticTransform
+
+* Intensity transforms
+
+  * Clip
+
+  * Normalize
+
+  * RandomIntensityJitter
+
+* Others
+
+  * ToTensor
+
+  * BaseClass
+
+All transforms are classes with a "__call__". numpy based transforms
+inherit the a base class "NDTransform".
+
+
+Structural transforms
+=====================
+
+
+Rescale
+-------
+
+class image_transforms.transforms.Rescale(scale, **kwargs)
+
+   Scale image by a certain factor.
+
+   Parameters:
+      * **scale** (*{float**, **tuple of floats}*) -- Scale factors.
+        Separate scale factors for each axis can be defined as
+        *(row_scale, col_scale)*.
+
+      * ****kwargs** (*optional*) -- Other kwargs as described in
+        skimage.transforms.rescale
+
+
+Resize
+------
+
+class image_transforms.transforms.Resize(output_shape, **kwargs)
+
+   Resize image to match a certain size.
+
+   Parameters:
+      * **output_shape** (*int** or **tuple*) -- Size of the
+        generated output image *(rows, cols)*. If it is a number,
+        aspect ratio of the image is preserved and smaller of the
+        height and width is matched to it.
+
+      * ****kwargs** (*optional*) -- Other params as described in
+        skimage.transforms.resize
+
+
+CenterCrop
+----------
+
+class image_transforms.transforms.CenterCrop(output_shape)
+
+   Crop to centered rectangle.
+
+   Parameters:
+      **output_shape** (*int** or **tuple*) -- Size of the cropped
+      image *(rows, cols)*. If it is a number, a square image with
+      side of length *output_shape* will be cropped.
+
+
+RandomCrop
+----------
+
+class image_transforms.transforms.RandomCrop(output_shape)
+
+   Random crop from larger image.
+
+   Parameters:
+      **output_shape** (*int** or **tuple*) -- Size of the cropped
+      image *(rows, cols)*. If it is a number, a square image with
+      side of length *output_shape* will be cropped.
+
+
+RandomScale
+-----------
+
+class image_transforms.transforms.RandomScale(min_size, max_size, **kwargs)
+
+   Randomly resize the image.
+
+   Resized so that aspect ratio is preserved and shorter side randomly
+   sampled from [min_size, max_size).
+
+   Parameters:
+      * **min_size** (*int*) -- Lower bound of shorter side
+        (inclusive)
+
+      * **max_size** (*int*) -- Upper bound of shorter side
+        (exclusive)
+
+      * ****kwargs** (*optional*) -- Other kwargs as described in
+        skimage.transforms.resize
+
+
+RandomSizedCrop
+---------------
+
+class image_transforms.transforms.RandomSizedCrop(output_shape, frac_range=[0.08, 1], aspect_range=[0.75, 1.3333333333333333], **kwargs)
+
+   Randomly sized crop within a specified size and aspect ratio range.
+
+   An area fraction and a aspect ratio is sampled within frac_range
+   and aspect_range respectively. Then sides of the crop are
+   calculated using these two. Random crop of this size is finally
+   resized to desired size.
+
+   Parameters:
+      * **output_shape** (*tuple*) -- *(rows, cols)* of output
+        image.
+
+      * **frac_range** (*sequence of length 2*) -- Range for
+        fraction of the area to be sampled from.
+
+      * **aspect_range** (*sequence of length 2*) -- Aspect ratio
+        range to be sampled from.
+
+      * ****kwargs** (*optional*) -- Other kwargs as described in
+        skimage.transforms.resize
+
+
+RandomRotate
+------------
+
+class image_transforms.transforms.RandomRotate(angle_range, **kwrgs)
+
+   Randomly rotate image.
+
+   Parameters:
+      * **angle_range** (*float** or **tuple*) -- Range of angles in
+        degrees. If float, angle_range = (-theta, theta).
+
+      * **kwargs** (*optional*) -- Other kwargs as described in
+        skimage.transforms.rotate
+
+
+RandomHorizontalFlip
+--------------------
+
+class image_transforms.transforms.RandomHorizontalFlip
+
+   Flip horizontally with 0.5 probability.
+
+
+RandomVerticalFlip
+------------------
+
+class image_transforms.transforms.RandomVerticalFlip
+
+   Flip vertically with 0.5 probability.
+
+
+Padding
+-------
+
+class image_transforms.transforms.Padding(pad_width, mode='constant', **kwargs)
+
+   Pad images.
+
+   Parameters:
+      * **pad_width** -- See np.pad for exact documentation. For
+        example, if pad_width is 20, 20 pixels are padded before *and*
+        after each dimension.
+
+      * **params** (*dict*) -- Other params to be passed to
+        *np.pad*. 'mode' is a important parameter. You can, for
+        example, have reflections of image padded instead of zeros.
+        Default mode is 'constant'.
+
+
+ElasticTransform
+----------------
+
+class image_transforms.transforms.ElasticTransform(alpha, sigma, **kwargs)
+
+   Elastic transform.
+
+   Flow is sampled from independent uniform distribution for each
+   pixel and then smoothed using a Gaussian smoothing kernel. This
+   flow is used to transform the image.
+
+   Parameters:
+      * **alpha** (*float*) -- Intensity of unsmoothened flow.
+
+      * **sigma** (*float*) -- Width of Gaussian smoothing kernel.
+
+      * ****kwargs** (*optional*) -- Other kwargs as described in
+        ndi.interpolation.map_coordinates
+
+
+Intensity transforms
+====================
+
+
+Clip
+----
+
+class image_transforms.transforms.Clip(inp_low=0, inp_high=1, out_low=None, out_high=None)
+
+   Clip numpy array by a low and high value.
+
+   Linear transformation can be applied after clipping so that new
+   desired high and lows can be set.
+
+   Default behaviour is to clip with 0 and 1 as bounds.
+
+   Parameters:
+      * **inp_low** (*float**, **optional*) -- Minimum value of the
+        input, default is 0.
+
+      * **inp_high** (*float**, **optional*) -- Maximum value of the
+        input, default is 1,
+
+      * **out_low** (*float**, **optional*) -- New minimum value for
+        the output, default is inp_low.
+
+      * **out_high** (*float**, **optional*) -- New Maximum value
+        for the output, default is inp_high.
+
+
+Normalize
+---------
+
+class image_transforms.transforms.Normalize(norm_params, mode='percentile')
+
+   Normalize image.
+
+   Parameters:
+      * **norm_params** (*sequence of length 2*) -- Normalization
+        parameters based on mode
+
+      * **mode** (*{'percentile'**, **'meanstd'}*) -- Normalization
+        mode. If 'percentile',  norm_params is (p_low, p_high) where
+        p_low and p_high are low and high percentiles respectively. if
+        'meanstd', norm_params is (mean, std).
+
+
+RandomIntensityJitter
+---------------------
+
+class image_transforms.transforms.RandomIntensityJitter(brightness=0, contrast=0, saturation=0)
+
+   Random jitters in brightness, contrast and saturation.
+
+   Parameters:
+      * **brightness** (*float*) -- Intensity of brightness jitter.
+        float in [0, 1].
+
+      * **contrast** (*float*) -- Intensity of contrast jitter.
+        float in [0, 1].
+
+      * **saturation** (*float*) -- Intensity of saturation jitter.
+        float in [0, 1].
+
+
+Others
+======
+
+
+ToTensor
+--------
+
+class image_transforms.transforms.ToTensor(dtype='torch.FloatTensor', dtype_label='torch.LongTensor')
+
+   Convert ndarrays to tensors.
+
+   Following are taken care of when converting to tensors:
+
+   * Axes are swapped so that color axis is in front of rows and
+     columns
+
+   * A color axis is added in case of gray images
+
+   * Target images are left alone and are directly converted
+
+   * Label images is set to LongTensor by default as expected by
+     torch's loss functions.
+
+   Parameters:
+      * **dtype** (*torch dtype*) -- If you want to convert all
+        tensors to cuda, you can directly set
+        dtype=torch.cuda.FloatTensor. This is for non label images
+
+      * **dtype_label** (*torch dtype*) -- Same as above but for
+        label images.
+
+
+BaseClass
+---------
+
+class image_transforms.transforms.NDTransform
+
+   Base class for all numpy based transforms.
+
+   This class achieves the following:
+
+   * Abstract the transform into
+
+        * Getting parameters to apply which is only run only once
+          per __call__.
+
+        * Applying transform given parameters
+
+   * Check arguments passed to a transforms for consistency
+
+   Abstraction is especially useful when there is randomness involved
+   with the transform. You don't want to have different transforms
+   applied to different members of a data point.
+
+   _get_params(h, w)
+
+      Get parameters of the transform to be applied for all member
+      images.
+
+      Implement this function if there are parameters to your
+      transform which depend on the image size. Need not implement it
+      if there are no such parameters.
+
+      Parameters:
+         * **h** (*int*) -- Height of the image. i.e, img.shape[0].
+
+         * **w** (*int*) -- Width of the image. i.e, img.shape[1].
+
+      Returns:
+         **params** -- Parameters of the transform in a dict with
+         string keys. e.g. {'angle': 30}
+
+      Return type:
+         dict
+
+   _transform(img, is_label, **kwargs)
+
+      Apply the transform on an image.
+
+      Use the parameters returned by _get_params and apply the
+      transform on img. Be wary if the image is label or not.
+
+      Parameters:
+         * **img** (*ndarray*) -- Image to be transformed. Can be a
+           color (H X W X C) or gray (H X W)image.
+
+         * **is_label** (*bool*) -- True if image is to be
+           considered as label, else False.
+
+         * ****kwargs** -- kwargs will be the dict returned by
+           get_params
+
+      Returns:
+         **img_transformed** -- Transformed image.
+
+      Return type:
+         ndarray

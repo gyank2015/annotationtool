@@ -1,0 +1,8 @@
+scikit-image
+simpleitk
+
+[dev]
+torch
+
+[test]
+torch

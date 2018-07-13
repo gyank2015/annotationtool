@@ -1,0 +1,295 @@
+Transforms (3d)
+***************
+
+Transforms described in this document are meant to be applied on 3d
+images. Each transform can accept an image or a dict of images. Dict
+of images is especially useful when you are doing segmentation.
+
+Let's see an example
+
+   import SimpleITK as sitk
+   from torchvision.transforms import Compose
+   from image_transforms import transforms_3d as tsfms
+
+   img = sitk.ReadImage('test.nii.gz', sitk.sitkFloat32)
+   label_img = sitk.Cast(5 * img / 600., sitk.sitkInt32)
+
+   img = io.imread('cut.jpg')
+   transform = Compose([tsfms.RandomAffineTransform(rotation=30),
+                        tsfms.RandomCrop([256, 256, 20])])
+
+   # option1: Pass img directly
+   out1 = transform(img)
+   assert out1.GetSize() == (256, 256, 20)
+
+   # option2: pass a dict of images
+   data = {'input': img, 'target': label_img,
+           'target_label': 3,
+           2: 4, 'lol': img}
+
+   out2 = transform(data2)
+   assert out2['input'].shape == (400, 400, 3)
+   assert (out2['target'].max() == 3) and (out2['label'] == 30)
+
+Following is assumed when you pass a dict:
+
+   1. All ndarrays in the dict are considered as images and should
+      be of the same size.
+
+   2. dict can have values which are not arrays, like "label" in
+      the above example
+
+   3. If key for a image in dict has string "target" in it
+      somewhere, it is considered as a target segmentation map. For
+      example in rotation, nearest neighbor interpolation is applied
+      to target.
+
+Note: "transforms_3d" uses SimpleITK size notation wherever
+  required. Remember that this is reverse of numpy/torch notation. For
+  example
+
+     sitk_size = [3, 4, 5]
+     img = sitk.Image(sitk_size, sitk.sitkFloat32)
+     assert sitk.GetArrayFromImage(img).shape == (5, 4, 3)
+
+
+Available transforms
+^^^^^^^^^^^^^^^^^^^^
+
+* Structural transforms
+
+  * Resample
+
+  * CenterCrop
+
+  * RandomCrop
+
+  * Padding
+
+  * MinimumPadding
+
+  * RandomAffineTransform
+
+* Intensity transforms
+
+  * Clip
+
+  * Normalize
+
+  * RandomIntensityJitter
+
+* Others
+
+  * ToTensor
+
+  * BaseClass
+
+All transforms are classes with a "__call__". SimpleITK based
+transforms inherit the following base class:
+
+
+Structural transforms
+=====================
+
+
+Resample
+--------
+
+class image_transforms.transforms_3d.Resample(spacing, direction=None)
+
+   Resample image to given spacing and direction.
+
+   Although resampling looks like trivial thing to do in SimpleITK, it
+   is not. It is a problem because origin etc. need to be changed.
+   Output image size is *not* same as input image size.
+
+   Parameters:
+      * **spacing** (*float** or **tuple*) -- Spacing of the output
+        image. If float, spacing is same across all axes. If spacing
+        in an axis is None, then that axis is not resampled.
+
+      * **direction** (*list**, **optional*) -- Direction of the
+        output image. By default, direction is not changed.
+
+
+CenterCrop
+----------
+
+class image_transforms.transforms_3d.CenterCrop(output_size)
+
+   Crop from center of the image.
+
+   Raises error if output size is greater than the input size. Use
+   MinimumPadding as required.
+
+   Parameters:
+      **output_size** (*int** or **tuple*) -- Output size after crop.
+
+
+RandomCrop
+----------
+
+class image_transforms.transforms_3d.RandomCrop(output_size)
+
+   Randomly crop from image.
+
+   Raises error if output size is greater than the input size. Use
+   MinimumPadding as required.
+
+   Parameters:
+      **output_size** (*int** or **tuple*) -- Output size after crop.
+
+
+Padding
+-------
+
+class image_transforms.transforms_3d.Padding(pad_width, cval=0)
+
+   Pad an image.
+
+   Parameters:
+      * **pad_width** -- Pad width like in np.pad.
+
+      * **cval** (*float**, **optional*) -- Constant value to be
+        padded with.
+
+
+MinimumPadding
+--------------
+
+class image_transforms.transforms_3d.MinimumPadding(min_size, cval=0)
+
+   Pad an image so that it is at least of a minumum size.
+
+   Parameters:
+      **min_size** (*tuple*) -- Minimum size of the image.
+
+
+RandomAffineTransform
+---------------------
+
+class image_transforms.transforms_3d.RandomAffineTransform(rotation=0, shear=0, scale=0, reflect=0, swap=0)
+
+   Random affine transform.
+
+   One transform for all your augmentation needs. Output size is same
+   as input size.
+
+   Parameters:
+      * **rotation** (*float** or **list*) -- Random rotation in
+        degrees. Angle is sampled in [-rotation, rotation]. A list can
+        be passed to specify rotation along each axis.
+
+      * **shear** (*float** or **list.*) -- Shear coefficient in [0,
+        1].
+
+      * **scale** (*float** or **list*) -- Random scale is sampled
+        from [1 - scale, 1 + scale].
+
+      * **reflect** (*float** or **list*) -- Probability to reflect
+        along a axis.
+
+      * **swap** (*float** or **list*) -- Probability to swap two
+        axes.
+
+
+Intensity transforms
+====================
+
+
+Clip
+----
+
+class image_transforms.transforms_3d.Clip(inp_low=0, inp_high=1, out_low=None, out_high=None)
+
+   Clip an image by a low and high value.
+
+   Linear transformation can be applied after clipping so that new
+   desired high and lows can be set.
+
+   Default behaviour is to clip with 0 and 1 as bounds.
+
+   Parameters:
+      * **inp_low** (*float**, **optional*) -- Minimum value of the
+        input, default is 0.
+
+      * **inp_high** (*float**, **optional*) -- Maximum value of the
+        input, default is 1,
+
+      * **out_low** (*float**, **optional*) -- New minimum value for
+        the output, default is inp_low.
+
+      * **out_high** (*float**, **optional*) -- New Maximum value
+        for the output, default is inp_high.
+
+
+Normalize
+---------
+
+class image_transforms.transforms_3d.Normalize(norm_params, mode='percentile')
+
+   Normalize image.
+
+   Parameters:
+      * **norm_params** (*sequence of length 2*) -- Normalization
+        parameters based on mode
+
+      * **mode** (*{'percentile'**, **'meanstd'}*) -- Normalization
+        mode. If 'percentile',  norm_params is (p_low, p_high) where
+        p_low and p_high are low and high percentiles respectively. if
+        'meanstd', norm_params is (mean, std).
+
+
+RandomIntensityJitter
+---------------------
+
+class image_transforms.transforms_3d.RandomIntensityJitter(brightness=0, contrast=0)
+
+   Random jitters in brightness and contrast.
+
+   Parameters:
+      * **brightness** (*float*) -- Intensity of brightness jitter.
+        float in [0, 1].
+
+      * **contrast** (*float*) -- Intensity of contrast jitter.
+        float in [0, 1].
+
+
+Others
+======
+
+
+ToTensor
+--------
+
+class image_transforms.transforms_3d.ToTensor(dtype='torch.FloatTensor', dtype_label='torch.LongTensor')
+
+   Convert ndarrays to tensors.
+
+   Following are taken care of when converting to tensors:
+
+   * Axes are swapped so that color axis is in front of rows and
+     columns
+
+   * A color axis is added in case of gray images
+
+   * Target images are left alone and are directly converted
+
+   * Label images is set to LongTensor by default as expected by
+     torch's loss functions.
+
+   Parameters:
+      * **dtype** (*torch dtype*) -- If you want to convert all
+        tensors to cuda, you can directly set
+        dtype=torch.cuda.FloatTensor. This is for non label images
+
+      * **dtype_label** (*torch dtype*) -- Same as above but for
+        label images.
+
+
+BaseClass
+---------
+
+class image_transforms.transforms_3d.SITKTransform
+
+   Baseclass for all SimpleITK based transforms.
