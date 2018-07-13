@@ -1,0 +1,22 @@
+{% extends 'objectdetection/base.html' %}
+{% block objecttype_active %}active{% endblock %}
+
+
+<!DOCTYPE html>
+{% block content %}
+
+<html>
+<head>
+    <title>Datasets</title>
+</head>
+<body>
+	<div class="list-group">
+		
+	    {% for dataset in datasets %}
+	    	<a href="detail/{{ dataset.dataset_ID }}/current" class="list-group-item list-group-item-info" style="height: 30px; padding: 5px 15px;">{{ dataset.source }} || {{ dataset.name }}</a>
+	    {% endfor %}
+	</div>
+
+</body>
+</html>
+{% endblock %}

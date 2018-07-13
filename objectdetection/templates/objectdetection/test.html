@@ -1,0 +1,513 @@
+{% extends 'objectdetection/base.html' %}
+{% block objecttype_active %}active{% endblock %}
+
+
+
+{% block javascript %}
+  <script>
+    $.ajaxSetup({ 
+         beforeSend: function(xhr, settings) {
+             function getCookie(name) {
+                 var cookieValue = null;
+                 if (document.cookie && document.cookie != '') {
+                     var cookies = document.cookie.split(';');
+                     for (var i = 0; i < cookies.length; i++) {
+                         var cookie = jQuery.trim(cookies[i]);
+                         // Does this cookie string begin with the name we want?
+                         if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                             cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                             break;
+                         }
+                     }
+                 }
+                 return cookieValue;
+             }
+             if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+                 // Only send the token to relative URLs i.e. locally.
+                 xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+             }
+         } 
+    });
+
+    var label_names = "{{ label_names|safe }}";
+    $(function () {
+      var cur_data_ID = "{{cur_data_ID}}";
+      // console.log(cur_data_ID,"********")
+      var annotateData = [];
+      var boxes = []
+      var label_selected = "";
+      var selected_image = '';
+      // Manipulating canvas
+      var canvas = document.getElementById('canvas');
+      console.log(canvas);
+      var context = canvas.getContext('2d');
+      console.imageSmoothingQuality = "high"
+      var imageObj = new Image();
+      var xStart,yStart,finalWidth, finalHeight;
+      var viewChanged = () => {
+        imageChange();
+        document.getElementById(cur_data_ID).style.backgroundColor = 'blue';
+        // Change buttons colour
+      };
+      var viewUnchanged = (annotation_state) => {
+        $(".objectBox").remove();
+        context.clearRect(0,0,canvas.width, canvas.height);
+        imageChange();
+        if(annotation_state==1){
+          document.getElementById(cur_data_ID).style.backgroundColor = 'yellow';
+
+        }
+        else{
+          document.getElementById(cur_data_ID).style.backgroundColor = 'red';
+
+        }
+      };
+      var viewChange = (annotation_state) => {
+        // console.log('inside viewChange', annotation_state);
+        if(annotation_state==0){
+          viewChanged();
+        }
+        else{
+          viewUnchanged(annotation_state);
+        }
+      };
+      var readxmlfile = () => {
+        boxes = [];
+        iCnt = 0;
+
+        var fileName = cur_data_ID.split(".");
+        $.ajax({
+          url: "/objectdetection/getxml/"+ "{{ dataset_ID }}" + "/" + cur_data_ID,
+          dataType: "json",
+          type: "GET",
+          success: function(data) {
+              /* handle data here */
+              // console.log(data)
+              json_data = (data);
+              // console.log('annotation_state obtained in getxml', json_data);
+              viewChange(json_data.annotation_state);
+              annotateData = [];
+
+          },
+          error: function(xhr, status) {
+              /* handle error here */
+              // console.log('not annotated yet');
+              annotateData = [];
+              viewChange(0);
+
+          }
+        });
+      };
+      var writexmlfile = (_cur_data_ID) => {
+        var fileName = cur_data_ID.split(".");
+        $.ajax({
+          url: "/objectdetection/putxml/"+ "{{ dataset_ID }}" + "/" + _cur_data_ID,
+          dataType: "json",
+          type: "POST",
+          data: {
+            "annotateData" : JSON.stringify(annotateData)
+          },
+          success: function(data) {
+              /* handle data here */
+              json_data = (data);
+              document.getElementById(cur_data_ID).style.backgroundColor = 'red';
+              var IDs = [];
+              $('#datas').find("button").each(function(){ IDs.push(this.id); });
+              cur_index=jQuery.inArray(cur_data_ID,IDs);
+              if(cur_index==14)
+                alert("Annotation for this page is finished.Please got to next page");
+              else{
+              next_data_ID=IDs[cur_index+1];
+              var fjj = document.getElementById(cur_data_ID)
+              if(fjj!=null){
+                document.getElementById(cur_data_ID).style.opacity = '1' ;
+              }
+              cur_data_ID = next_data_ID;
+              document.getElementById(cur_data_ID).style.opacity = '0.4' ;
+              $('div').remove('#metadata')
+
+              selected_image = '{{MEDIA_URL}}{{dataset_ID}}/{{dataset_name}}'+'/'+cur_data_ID;
+              readxmlfile();
+
+              return false;              
+              }
+          },
+          error: function(xhr, status) {
+              /* handle error here */
+              // console.log('writexmlfile fail');
+             
+          }
+        });
+
+      }
+      var imageChange = () => {
+        d = new Date();
+        // boxes = []
+
+        // console.log("here", selected_image);
+        // $('#imgPreview').children("img").attr('src', '{{MEDIA_URL}}testMedia/{{data_ID}}'+d.getTime());
+        imageObj = new Image();
+
+        imageObj.onload = function(){
+          fitImageOn(canvas, imageObj);
+        };
+        imageObj.src = selected_image;
+        // context.clearRect(0,0,canvas.width, canvas.height);
+
+        // fitImageOn(canvas, imageObj);
+
+      };
+      var fitImageOn = function(canvas, temp_imageobj) {
+        context.clearRect(0,0,canvas.width, canvas.height);
+        // console.log('inside fitImageOn');
+        var imageAspectRatio = temp_imageobj.width / temp_imageobj.height;
+        var canvasAspectRatio = canvas.width / canvas.height;
+        var renderableHeight, renderableWidth;
+
+        // If image's aspect ratio is less than canvas's we fit on height
+        // and place the image centrally along width
+        if(imageAspectRatio < canvasAspectRatio) {
+          renderableHeight = canvas.height;
+          renderableWidth = temp_imageobj.width * (renderableHeight / temp_imageobj.height);
+          xStart = (canvas.width - renderableWidth) / 2;
+          yStart = 0;
+        }
+
+        // If image's aspect ratio is greater than canvas's we fit on width
+        // and place the image centrally along height
+        else if(imageAspectRatio > canvasAspectRatio) {
+          renderableWidth = canvas.width
+          renderableHeight = temp_imageobj.height * (renderableWidth / temp_imageobj.width);
+          xStart = 0;
+          yStart = (canvas.height - renderableHeight) / 2;
+        }
+
+        // Happy path - keep aspect ratio
+        else {
+          renderableHeight = canvas.height;
+          renderableWidth = canvas.width;
+          xStart = 0;
+          yStart = 0;
+        }
+        finalHeight = renderableHeight;
+        finalWidth = renderableWidth;
+        context.drawImage(temp_imageobj, xStart, yStart, finalWidth, finalHeight);
+      };
+      var fitImageOn1 = function(canvas, temp_imageobj) {
+        
+
+        context.drawImage(temp_imageobj, xStart, yStart, finalWidth, finalHeight);
+
+      };
+
+      
+
+
+      
+      // imageObj.src = selected_image;
+      // $.each( label_names, function( i, val ) {
+      //   console.log(val);
+      //   $("#labelBox").append($(
+      //     '<button id="'
+      //     + val
+      //     + '"> '
+      //     + val
+      //     + ' </button>'
+      //     ))
+      // });
+      $("#labelBox")
+      /* SCRIPT TO OPEN THE MODAL WITH THE PREVIEW */
+      $(".labelButton").click(function (){
+        label_selected = this.id;
+      });
+      $("#addObject").click(function () {
+            label_selected = "";
+            $("#image").attr("src", selected_image);
+            $("#modalCrop").modal("show");
+      });
+
+      /* SCRIPTS TO HANDLE THE CROPPER BOX */
+      var $image = $("#image");
+      var cropBoxData;
+      var canvasData;
+      var iCnt = 0;
+      $("#modalCrop").on("shown.bs.modal", function () {
+        $image.cropper({
+          viewMode: 1,
+          // aspectRatio: 1/1,
+          minCropBoxWidth: 50,
+          minCropBoxHeight: 50,
+          ready: function () {
+            $image.cropper("setCanvasData", canvasData);
+            $image.cropper("setCropBoxData", cropBoxData);
+          }
+        });
+      }).on("hidden.bs.modal", function () {
+        cropBoxData = $image.cropper("getCropBoxData");
+        canvasData = $image.cropper("getCanvasData");
+        $image.cropper("destroy");
+      });
+
+      $(".js-zoom-in").click(function () {
+        $image.cropper("zoom", 0.1);
+      });
+
+      $(".js-zoom-out").click(function () {
+        $image.cropper("zoom", -0.1);
+      });
+
+      /* SCRIPT TO COLLECT THE DATA AND POST TO THE SERVER */
+      $(".labelButton").click(function () {
+        if(label_selected == ""){
+          return;
+        }
+        var cropData = $image.cropper("getData");
+        var dict = {
+          "x1" : Math.round(cropData["x"]),
+          "y1" : Math.round(cropData["y"]),
+          "x2" : Math.round(cropData["x"] + cropData["width"]),
+          "y2" : Math.round(cropData["y"] + cropData["height"]),
+          "label" : label_selected
+
+        };
+        annotateData.push(dict);
+        appendObject(dict);
+       
+        // $('#modalCrop').modal('hide');
+
+
+      });
+      $(".js-crop-and-upload").click(function () {
+        $('#modalCrop').modal('hide');
+      });
+
+      var appendObject = (objDict) => {
+        rectX1 = xStart + objDict["x1"]*finalWidth/imageObj.width;
+        rectY1 = yStart + objDict["y1"]*finalHeight/imageObj.height;
+        rectX2 = xStart + objDict["x2"]*finalWidth/imageObj.width;
+        rectY2 = yStart + objDict["y2"]*finalHeight/imageObj.height;
+        var box = {
+                  path: [rectX1, rectY1, rectX2-rectX1, rectY2-rectY1], 
+                  label: objDict["label"] 
+          };
+        boxes.push(box);
+        $("#objectsPreview").append($(
+        '<div id="objectBox" style="float: right; width: 100%">  <div id=metadata style="float: right; width: 50%">'
+        + '(' + objDict["x1"] + ','
+        + objDict["y1"] + '),('
+        + objDict["x2"] + ','
+        + objDict["y2"] + '):'
+        + objDict["label"]
+        + ' <a href="#" id = remove'+iCnt+' class="remove_field">Remove</a></div> </div>'
+        ));
+        iCnt++;
+
+        context.beginPath();
+        context.lineWidth = "1";
+        context.strokeStyle="blue";
+        context.rect(rectX1, rectY1, rectX2-rectX1, rectY2 - rectY1 );
+        context.stroke();
+        context.font = "10px Arial";
+        context.fillText(objDict["label"],rectX1,rectY1+10);
+      };
+      $(objectsPreview).on("click",".remove_field", function(e){
+        id = this.id;
+        index = id.replace('remove','');
+        console.log(index);
+        index= parseInt(index);
+        console.log(iCnt);
+        // console.log(boxes[index]);
+        boxes = jQuery.grep(boxes, function(value) {
+        return value != boxes[index];
+        });
+        for(var i=index+1;i<iCnt;i++)
+        {
+          id = '#'+'remove'+i;
+          console.log(id);
+          newid= 'remove'+(i-1);
+          console.log(newid);
+          $(id).attr('id',newid);
+        }
+        redrawAll(boxes)
+        annotateData = jQuery.grep(annotateData, function(value) {
+        return value != annotateData[index];
+        });
+
+        // console.log('annotateData',annotateData)
+        e.preventDefault();
+        $(this).parent('div').remove();
+        iCnt--;
+    });
+      function redrawAll(myObjects) {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      imageObj = new Image();
+        imageObj.src = selected_image;
+      fitImageOn1(canvas,imageObj)
+      for (var i = 0; i < myObjects.length; i++) {
+            drawLinePath(myObjects[i]);
+        }
+      };
+      function drawLinePath(theObject) {
+          var points = theObject.path;
+          context.beginPath();
+          context.lineWidth = "1";
+          context.strokeStyle="blue";
+          context.rect(points[0], points[1], points[2], points[3] );
+          context.stroke();
+          context.font = "10px Arial";
+          context.fillText(theObject.label,points[0],points[1]+10);
+
+      };    
+      $("form").submit(function (){
+        // event.preventDefault(); 
+        annotateDataJSON = $.toJSON(annotateData);
+        // console.log('annotateDataJSON', annotateDataJSON);
+        annotateDataJSONString = JSON.stringify(annotateDataJSON);
+        $("#annotationData").val(annotateDataJSONString);
+        $('<input>').attr('type', 'hidden').attr('name', 'data').attr('value', 200).appendTo('#myForm');
+        // $(this).unbind('submit').submit();
+        return true;
+      });
+      $("#submitAnnotation").click(function (){
+        annotateDataJSONString = JSON.stringify(annotateData);
+        document.getElementById("annotationField").value = annotateDataJSONString;
+        boxes = [];
+        iCnt = 0;
+        writexmlfile(cur_data_ID);
+
+      });
+      $('button.data_ID').click(function () {
+        var fjj = document.getElementById(cur_data_ID)
+        if(fjj!=null){
+          document.getElementById(cur_data_ID).style.opacity = '1' ;
+        }
+        var data_ID = $(this).attr('id');
+        cur_data_ID = data_ID;
+        document.getElementById(cur_data_ID).style.opacity = '0.4' ;
+        $('div').remove('#metadata')
+
+        selected_image = '{{MEDIA_URL}}{{dataset_ID}}/{{dataset_name}}/'+cur_data_ID;
+        // console.log(cur_data_ID, selected_image,"*******");
+        readxmlfile();
+
+        return false;
+      });
+    });
+  </script>
+{% endblock %}
+
+
+{% block content %}
+<!DOCTYPE html>
+  <!-- MODAL TO CROP THE IMAGE -->
+  <div></div>
+  <form role="form" accept-charset="UTF-8" class="submitForm" id="submitForm" method="post" action="{% url 'objectdetection:annotate' %}">
+      {% csrf_token %}
+      <input type="hidden" name="dataset_ID" value="{{ dataset_ID }}" />
+      <input type="hidden" name="data_ID" value="{{ data_ID }}" />
+      <input type="hidden" id="annotationField" name="annotationData" value="xxxxxxxx" />
+  </form>
+
+  <div id ="dataset" style="float: left; margin: 0; vertical-align: top; height:100%; width:100%;">
+  <div style="float: left; height:100%; width:20%;">
+    <div  id ="datas" role="group" aria-label="..." >
+      {% for data in data_ID_list %}
+        <div>
+          <div>
+            {% if data.annotation_state == 0 %}
+              <button type="button"  class="data_ID btn btn-sm btn-info" id="{{ data.data_ID }}" style="width:100%;white-space: normal;word-wrap: break-word;background: blue;"><font color="black">{{ data.data_ID }}</button>
+            {% endif %}
+            {% if data.annotation_state == 1 %}
+              <button type="button"  class="data_ID btn btn-sm btn-info" id="{{ data.data_ID }}" style="width:100%;white-space: normal;word-wrap: break-word; background-color:yellow"><font color="black">{{ data.data_ID }}</button>
+            {% endif %}
+            {% if data.annotation_state == 2 %}
+              <button type="button" style="width:100%; white-space: normal;word-wrap: break-word;background-color:red;" class="data_ID btn btn-sm btn-info" id="{{ data.data_ID }}"><font color="black">{{ data.data_ID }}</button>
+            {% endif %}
+          </div>
+          <div>
+            
+          </div>
+        </div>
+      {% endfor %}
+
+    </div>
+  </div>
+
+  
+  <div id="imgPreview" style="float: left; height:100%; width:60%;">
+  <canvas id="canvas" width="700" height="700" style="float: left; border:1px solid #d3d3d3;">Your browser does not support the HTML5 canvas tag.</canvas>
+  <div>
+  </div>
+    <!-- <img src="{{MEDIA_URL}}/{{img_path}}" style="float:left;width: 100%; overflow: auto;"> -->
+  </div>
+
+  <div id="objectsPreview" style="float:right; height:100%; width:20%";>
+
+    <div id="objectHeader">
+      <button id="addObject" class=" btn btn-primary" style="float:right; width: 50%">Add object</button>
+      <button id="submitAnnotation" class=" btn btn-primary" style="float:right; width: 30%">Submit</button>
+    </div>
+
+    <div class="objectBox" id="objectBox" style="float: right; width: 100%">
+      <div id="object" style="float: right; width: 50%">
+      </div>
+      <div class="metadata" id="metadata" style="float: right; width: 50%">
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal fade" id="modalCrop" style="height: 100vh;">
+  <div class="modal-dialog" style="height: 100%; width:70%">
+    <div class="modal-content" style="height: 100%;">
+      <div class="modal-header" style="height: 10%;">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class="modal-title">Select the Label and Mark the boundary</h4>
+      </div>
+      <div id="wrapper1" style="float:left; height:80%; width: 100%;">
+        <div class="modal-body" style="float:left; height:80%; width: 70%;">
+          <img src="" id="image" style="max-width: height:80%; 70%;">
+        </div>
+        <div id="labelBox" style="float:right; height:100%;   width:30%">
+          {% for label in label_names %}
+            <button id="{{ label }}" class="labelButton" style="float:left; width:100%">{{ label }} </button>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="modal-footer" style="height: 10%;">
+        <div class="btn-group pull-left" role="group">
+          <button type="button" class="btn btn-default js-zoom-in">
+            <span class="glyphicon glyphicon-zoom-in"></span>
+          </button>
+          <button type="button" class="btn btn-default js-zoom-out">
+            <span class="glyphicon glyphicon-zoom-out"></span>
+          </button>
+        </div>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Nevermind</button>
+        <button type="button" class="btn btn-primary js-crop-and-upload" id="saver">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div style="float:right; width: 40%">
+
+{% if show_prev %}
+  <a href="/objectdetection/detail/{{dataset_ID}}/prev/"> <button>Prev Page</button></a>
+  {% endif %}
+
+{% if show_next %}
+  <a href="/objectdetection/detail/{{dataset_ID}}/next/"> <button>Next Page</button></a>
+  {% endif %}
+
+{% if show_restart %}
+  <a href="/objectdetection/detail/{{dataset_ID}}/restart/"> <button>Restart Annotation</button></a>
+  {% endif %}
+</div>
+
+
+{% endblock %}
