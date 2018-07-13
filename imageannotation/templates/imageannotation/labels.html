@@ -1,0 +1,24 @@
+{% extends 'imageannotation/base.html' %}
+{% block imagetype_active %}active{% endblock %}
+
+{% block body %}
+
+
+<head>
+    <title>Labels</title>
+
+<h1> Choose one of the following labels: </h1>
+<head>
+    <title>Labels</title>
+</head>
+<body>
+	<div class="list-group" style="width: 70%; text-align: center; align-self: center;">
+    {% for label in labels %}
+        <a href='/imageannotation/{{datasetID}}/{{label.label_ID}}/current/' class="list-group-item list-group-item-info" style="height: 30px; padding: 5px 15px;">{{ label.label_name }}</a>
+    {% endfor %}
+    </div>
+</body>
+</html>
+
+
+{% endblock %}

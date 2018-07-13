@@ -1,0 +1,57 @@
+{% extends 'imageannotation/base.html' %}
+{% block imagetype_active %}active{% endblock %}
+
+{% block body %}
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Images</title>
+</head>
+<body>
+    <div style="position:fixed; top:10%; right:2%; background-color:lightblue">
+      <h5>User metrics</h5>
+      <h6>Skipped: {{ userMetrics.skip_count }}</h6>
+      <h6>Yes: {{ userMetrics.yes_count }}</h6>
+      <h6>No: {{ userMetrics.no_count }}</h6>
+      <h6>Total Annotated: {{ userMetrics.totalAnnotated }}</h6>
+    </div>
+</body>
+<form action="{% url 'imageannotation:annotate' %}" method="post">
+{% csrf_token %}
+
+{% for image in images %}
+	<h1> Image Id :{{ image.data_ID }} </h1>
+	 <img src="{{MEDIA_URL}}{{ dataset_ID }}/{{dataset_name}}/{{ image.data_ID }}" style="width:300px;height:300px;"> 
+	</body>
+	</html>
+
+	{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+   <h1> TAG :{{ label_name }} </h1>
+   <input type="hidden" value = "{{image.data_ID}}" name = "data_id{{forloop.counter}}" />
+   <input type="radio" name="choice{{forloop.counter}}" id='0' value='0' checked="checked">
+   <label for='0'>SKIP</label><br />
+	 <input type="radio" name="choice{{forloop.counter}}" id="1" value="1" />
+	 <label for="1">TRUE</label><br />
+   <input type="radio" name="choice{{forloop.counter}}" id="2" value="2" />
+   <label for="2">FALSE</label><br />
+
+{% endfor %}	
+{% if not images %}
+  <h3>Seems like there's no more data for your choice</h3>
+{% endif %}
+{% if images %}
+  <input type= "submit" value="validate">
+{% endif %}
+</form>
+
+{% endblock %}
+
+<!-- <div>
+
+  {% if show_next %}
+  <a href="/imageannotation/{{dataset_ID}}/{{label_ID}}/next"> next</a>
+  {% endif %}
+</div>
+ -->
