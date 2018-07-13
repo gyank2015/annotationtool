@@ -1,0 +1,21 @@
+{% extends 'imageannotation/base.html' %}
+{% block videotype_active %}active{% endblock %}
+
+{% block body %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Datasets</title>
+</head>
+<h1> Choose any one of the datasets </h1> 
+<body>
+	<div class="list-group" style="width: 70%; text-align: center; align-self: center;">
+    {% for dataset in datasets %}
+    	<a href={{ dataset.dataset_ID }}/labels/ class="list-group-item list-group-item-info" style="height: 30px; padding: 5px 15px;">{{ dataset.source }} | {{ dataset.name }}</a> <br>
+    {% endfor %}
+    </div>
+</body>
+</html>
+
+{% endblock %}

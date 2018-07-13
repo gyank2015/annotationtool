@@ -1,0 +1,23 @@
+{% extends 'imageannotation/base.html' %}
+{% block videotype_active %}active{% endblock %}
+
+{% block body %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Labels</title>
+</head>
+<h1> Choose one of the following labels: </h1>
+
+<body>
+
+	<div class="list-group" style="width: 70%; text-align: center; align-self: center;">
+    {% for label in labels %}
+    	<a href='/videoannotation/{{datasetID}}/{{label.label_ID}}/current/' class="list-group-item list-group-item-info" style="height: 30px; padding: 5px 15px;">{{ label.label_name }}</a>
+    {% endfor %}
+    </div>
+</body>
+</html>
+
+{% endblock %}
